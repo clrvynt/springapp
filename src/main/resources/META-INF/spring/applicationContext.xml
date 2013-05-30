@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<beans xmlns="http://www.springframework.org/schema/beans" 
+		xmlns:context="http://www.springframework.org/schema/context" 
+		xmlns:tx="http://www.springframework.org/schema/tx" 
+		xmlns:mvc="http://www.springframework.org/schema/mvc" 
+		xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		xmlns:task="http://www.springframework.org/schema/task" 
+		xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd         
+							http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd         
+							http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx.xsd       
+							http://www.springframework.org/schema/mvc http://www.springframework.org/schema/mvc/spring-mvc.xsd
+							http://www.springframework.org/schema/task http://www.springframework.org/schema/task/spring-task.xsd">
+
+	<!--  Load all spring properties files. Database properties for example -->
+    <context:property-placeholder location="classpath*:META-INF/spring/*.properties"/>
+
+	<!--  Base package to scan. -->
+    <context:component-scan base-package="com.clrvynt">
+    </context:component-scan>
+
+	<!--  Automatically wires in validator -->
+	<mvc:annotation-driven/>
+	
+	<!--  Interceptor -->
+	<!--  Simple security filter that checks cache/session/header for authentication token -->
+	<mvc:interceptors>
+		<mvc:interceptor>
+			<mvc:mapping path="/**/auth/**"/>
+			<bean class="com.clrvynt.interceptor.SecurityInterceptor"/>
+		</mvc:interceptor>
+	</mvc:interceptors>
+	
+	<!--  Resources .. put your img/css/js files here to bypass view resolution/interceptors etc. -->
+	<mvc:resources location="/resources/" mapping="/resources/**"/>
+
+	<!--  Async and Scheduled jobs if needed -->	
+	<task:annotation-driven executor="myExecutor" scheduler="myScheduler"/>
+	<task:executor id="myExecutor" pool-size="5" queue-capacity="10" rejection-policy="CALLER_RUNS"/>
+	<task:scheduler id="myScheduler" pool-size="5"/>
+	
+	<!--  Transaction annotation-driven -->
+    <tx:annotation-driven/>
+
+    <!--  JSP View Resolver -->
+    <bean id="jspViewResolver" class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+    	<property name="viewClass" value="org.springframework.web.servlet.view.JstlView"/>
+    	<property name="prefix" value="/WEB-INF/jsp/" />
+    	<property name="suffix" value=".jsp" />
+    </bean>
+    
+    <!--  Multipart Form Submission -->
+    <bean id="multipartResolver" class="org.springframework.web.multipart.commons.CommonsMultipartResolver"/>
+    
+    <bean class="java.net.URI" id="dbUrl">
+        <constructor-arg value="${DATABASE_URL}"/>
+    </bean>
+
+    <!--  Use DBCP for connection pooling -->
+    <bean class="org.apache.commons.dbcp.BasicDataSource" destroy-method="close" id="dataSource">
+        <property name="driverClassName" value="${database.driverClassName}"/>
+        <property name="url" value="${database.url}"/>
+        <property name="username" value="${database.username}"/>
+        <property name="password" value="${database.password}"/>
+    </bean>
+    <bean class="org.springframework.orm.jpa.JpaTransactionManager" id="transactionManager">
+        <property name="entityManagerFactory" ref="entityManagerFactory"/>
+    </bean>
+    <bean class="org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean" id="entityManagerFactory">
+        <property name="persistenceUnitName" value="persistenceUnit"/>
+        <property name="dataSource" ref="dataSource"/>
+    </bean>
+    
+    
+    <!--  Rest of your beans go here. -->
+   <bean name="appService" class="com.clrvynt.service.AppServiceImpl"/>
+    <bean name="appDao" class="com.clrvynt.dao.AppDaoImpl"/>
+ </beans>
