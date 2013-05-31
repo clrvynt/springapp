@@ -172,7 +172,7 @@ public class AppController {
      */
     @RequestMapping(value = "/auth/getAllUsers.do", method = RequestMethod.GET)
     public @ResponseBody
-    ResponseDto getRecentPress() {
+    ResponseDto getAllUsers() {
 	ResponseDto response = new ResponseDto();
 	try {
 	    // Get recent press
